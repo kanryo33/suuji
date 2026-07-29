@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本語 読み方練習</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Meiryo","メイリオ",sans-serif}
+body{background:#ffffff;color:#222;padding:24px;min-height:100vh}
+.container{max-width:1300px;margin:0 auto}
+h1{text-align:center;font-size:38px;margin-bottom:24px}
+.control-panel{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-bottom:36px}
+button,select{width:140px;height:44px;font-size:16px;padding:0 6px;border:none;border-radius:8px;cursor:pointer;text-align:center}
+.btn-blue{background:#2166dd;color:#fff}
+.btn-green{background:#28a745;color:#fff}
+.btn-orange{background:#ff7722;color:#fff}
+.display-area{border:3px solid #333;border-radius:16px;padding:70px 20px;text-align:center;margin-bottom:30px;min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.question-text{font-size:96px;font-weight:bold;margin-bottom:28px}
+.yomi-text{font-size:40px;color:#d12020;display:none;letter-spacing:6px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>日本語 数字・日付・時刻 読み方練習</h1>
+
+<div class="control-panel">
+<select id="digitSelect" class="btn-blue">
+<option value="1">数字 1桁</option>
+<option value="2">数字 2桁</option>
+<option value="3">数字 3桁</option>
+<option value="4">数字 4桁</option>
+<option value="5">数字 5桁</option>
+<option value="6">数字 6桁</option>
+<option value="7">数字 7桁</option>
+<option value="8">数字 8桁</option>
+</select>
+<button class="btn-blue" onclick="setMode('date')">年月日</button>
+<button class="btn-blue" onclick="setMode('time')">時刻（時分）</button>
+<button class="btn-blue" onclick="setMode('all')">総合</button>
+<button class="btn-orange" onclick="toggleYomi()">読み方を表示/隠す</button>
+<button class="btn-green" onclick="nextQuestion()">次の問題</button>
+</div>
+
+<div class="display-area">
+<div class="question-text" id="qText">モードを選択してください</div>
+<div class="yomi-text" id="yomiText"></div>
+</div>
+</div>
+
+<script>
+let mode = "";
+let nowQ = "";
+let nowA = "";
+let showYomiFlag = false;
+
+const digitYomi = ["ゼロ","いち","に","さん","よん","ご","ろく","なな","はち","きゅう"];
+const dayYomi = {
+1:"ついたち",2:"ふつか",3:"みっか",4:"よっか",5:"いつか",6:"むいか",7:"なのか",8:"ようか",9:"ここのか",10:"とおか",
+11:"じゅういちにち",12:"じゅうににち",13:"じゅうさんにち",14:"じゅうよっか",15:"じゅうごにち",16:"じゅうろくにち",
+17:"じゅうしちにち",18:"じゅうはちにち",19:"じゅうくにち",20:"はつか",21:"にじゅういちにち",22:"にじゅうににち",
+23:"にじゅうさんにち",24:"にじゅうよっか",25:"にじゅうごにち",26:"にじゅうろくにち",27:"にじゅうしちにち",
+28:"にじゅうはちにち",29:"にじゅうくにち",30:"さんじゅうにち",31:"さんじゅういちにち"
+};
+const monthYomi = {
+1:"いちがつ",2:"にがつ",3:"さんがつ",4:"しがつ",5:"ごがつ",6:"ろくがつ",
+7:"しちがつ",8:"はちがつ",9:"くがつ",10:"じゅうがつ",11:"じゅういちがつ",12:"じゅうにがつ"
+};
+
+function numToYomi(n){
+    if(n === 0) return "ゼロ";
+    const parts = [];
+    const senMan = Math.floor(n / 10000000);
+    if(senMan > 0){
+        if(senMan === 1) parts.push("いっせんまん");
+        else parts.push(digitYomi[senMan] + "せんまん");
+    }
+    const hyakuMan = Math.floor(n / 1000000) % 10;
+    if(hyakuMan > 0){
+        if(hyakuMan === 1) parts.push("ひゃくまん");
+        else if(hyakuMan === 3) parts.push("さんびゃくまん");
+        else if(hyakuMan === 6) parts.push("ろっぴゃくまん");
+        else if(hyakuMan === 8) parts.push("はっぴゃくまん");
+        else parts.push(digitYomi[hyakuMan] + "ひゃくまん");
+    }
+    const juuMan = Math.floor(n / 100000) % 10;
+    if(juuMan > 0){
+        if(juuMan === 1) parts.push("じゅうまん");
+        else parts.push(digitYomi[juuMan] + "じゅうまん");
+    }
+    const man = Math.floor(n / 10000) % 10;
+    if(man > 0){
+        if(man === 1) parts.push("いちまん");
+        else parts.push(digitYomi[man] + "まん");
+    }
+    const sen = Math.floor(n / 1000) % 10;
+    if(sen > 0){
+        if(sen === 1) parts.push("せん");
+        else if(sen === 3) parts.push("さんぜん");
+        else if(sen === 8) parts.push("はっせん");
+        else parts.push(digitYomi[sen] + "せん");
+    }
+    const hyaku = Math.floor(n / 100) % 10;
+    if(hyaku > 0){
+        if(hyaku === 1) parts.push("ひゃく");
+        else if(hyaku === 3) parts.push("さんびゃく");
+        else if(hyaku === 6) parts.push("ろっぴゃく");
+        else if(hyaku === 8) parts.push("はっぴゃく");
+        else parts.push(digitYomi[hyaku] + "ひゃく");
+    }
+    const juu = Math.floor(n / 10) % 10;
+    if(juu > 0){
+        if(juu === 1) parts.push("じゅう");
+        else parts.push(digitYomi[juu] + "じゅう");
+    }
+    const ichi = n % 10;
+    if(ichi > 0){
+        parts.push(digitYomi[ichi]);
+    }
+    return parts.join(" ");
+}
+
+function genNumber(){
+    const digit = document.getElementById("digitSelect").value;
+    let min = 0, max = 0;
+    if(digit === "1"){min=0;max=9}
+    else if(digit === "2"){min=10;max=99}
+    else if(digit === "3"){min=100;max=999}
+    else if(digit === "4"){min=1000;max=9999}
+    else if(digit === "5"){min=10000;max=99999}
+    else if(digit === "6"){min=100000;max=999999}
+    else if(digit === "7"){min=1000000;max=9999999}
+    else if(digit === "8"){min=10000000;max=99999999}
+    const n = Math.floor(Math.random()*(max-min+1)) + min;
+    return {q:n.toString(),a:numToYomi(n)};
+}
+
+function genDate(){
+    const y = Math.floor(Math.random()*90)+1990;
+    const m = Math.floor(Math.random()*12)+1;
+    const maxDay = [31,28,31,30,31,30,31,31,30,31,30,31][m-1];
+    const d = Math.floor(Math.random()*maxDay)+1;
+    const yomiY = numToYomi(y) + " ねん";
+    const yomiM = monthYomi[m];
+    const yomiD = dayYomi[d];
+    return {q:`${y}年${m}月${d}日`,a:`${yomiY} ${yomiM} ${yomiD}`};
+}
+
+function genTime(){
+    const h = Math.floor(Math.random()*24);
+    const mi = Math.floor(Math.random()*60);
+    let hy;
+    if(h===0) hy="れいじ";
+    else if(h===1) hy="いちじ";
+    else if(h===2) hy="にじ";
+    else if(h===3) hy="さんじ";
+    else if(h===4) hy="よじ";
+    else if(h===5) hy="ごじ";
+    else if(h===6) hy="ろくじ";
+    else if(h===7) hy="しちじ";
+    else if(h===8) hy="はちじ";
+    else if(h===9) hy="くじ";
+    else if(h===10) hy="じゅうじ";
+    else if(h===11) hy="じゅういちじ";
+    else if(h===12) hy="じゅうにじ";
+    else if(h===13) hy="じゅうさんじ";
+    else if(h===14) hy="じゅうよじ";
+    else if(h===15) hy="じゅうごじ";
+    else if(h===16) hy="じゅうろくじ";
+    else if(h===17) hy="じゅうしちじ";
+    else if(h===18) hy="じゅうはちじ";
+    else if(h===19) hy="じゅうくじ";
+    else if(h===20) hy="にじゅうじ";
+    else if(h===21) hy="にじゅういちじ";
+    else if(h===22) hy="にじゅうにじ";
+    else if(h===23) hy="にじゅうさんじ";
+    else hy = numToYomi(h)+" じ";
+
+    let miy = "";
+    if(mi>0){
+        if(mi===1) miy="いっぷん";
+        else if(mi===2) miy="にふん";
+        else if(mi===3) miy="さんぷん";
+        else if(mi===4) miy="よんふん";
+        else if(mi===5) miy="ごふん";
+        else if(mi===6) miy="ろっぷん";
+        else if(mi===7) miy="ななふん";
+        else if(mi===8) miy="はっぷん";
+        else if(mi===9) miy="きゅうふん";
+        else if(mi===10) miy="じゅっぷん";
+        else if(mi===20) miy="にじゅっぷん";
+        else if(mi===30) miy="さんじゅっぷん";
+        else if(mi===40) miy="よんじゅっぷん";
+        else if(mi===50) miy="ごじゅっぷん";
+        else{
+            const t = Math.floor(mi/10);
+            const o = mi%10;
+            let tmpParts=[];
+            if(t===1) tmpParts.push("じゅう");
+            else if(t>1) tmpParts.push(digitYomi[t]+"じゅう");
+            if(o===1) tmpParts.push("いっぷん");
+            else if(o===3) tmpParts.push("さんぷん");
+            else if(o===6) tmpParts.push("ろっぷん");
+            else if(o===8) tmpParts.push("はっぷん");
+            else if(o>0) tmpParts.push(digitYomi[o]+"ふん");
+            miy = tmpParts.join(" ");
+        }
+    }
+    const aText = miy ? `${hy} ${miy}` : hy;
+    return {q:`${h}時${mi}分`,a:aText};
+}
+
+function setMode(m){
+    mode = m;
+    nextQuestion();
+}
+
+function nextQuestion(){
+    let item;
+    if(mode==="") item = genNumber();
+    else if(mode==="date") item = genDate();
+    else if(mode==="time") item = genTime();
+    else{
+        const r = Math.random();
+        if(r<0.33)item=genNumber();
+        else if(r<0.66)item=genDate();
+        else item=genTime();
+    }
+    nowQ = item.q;
+    nowA = item.a;
+    document.getElementById("qText").innerText = nowQ;
+    document.getElementById("yomiText").innerText = nowA;
+    document.getElementById("yomiText").style.display = "none";
+    showYomiFlag = false;
+}
+
+function toggleYomi(){
+    showYomiFlag = !showYomiFlag;
+    document.getElementById("yomiText").style.display = showYomiFlag ? "block" : "none";
+}
+</script>
+</body>
+</html>
